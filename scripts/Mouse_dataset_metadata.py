@@ -4,8 +4,8 @@ import sys
 from F1_functions import *
 from Allen_Connectome_metadata import *
 
-# tlen_kai=2000 # number of time points in DREADDs dataset
-# tlen_arm=512 # number of time points in Lesion dataset
+tlen_kai=2000 # number of time points in DREADDs dataset
+tlen_arm=512 # number of time points in Lesion dataset
 
 
 # Experimental Subjects
@@ -126,6 +126,24 @@ for filename in os.listdir(path_data_DREADDs):
 for filename in os.listdir(path_data_lesion):
     if filename.startswith("GM"):
         GM['Th'][my_removeprefix(filename,'GM_').strip('.npy')]=np.load(path_data_lesion+filename)
+
+GS={'ACA':{}, 'RSC':{}, 'CTRL':{}, 'Th':{}}
+for filename in os.listdir(path_data_DREADDs):
+    if filename.startswith("Globalsignal_DMN_A24_CNO"):
+        GS['ACA'][filename.strip('Globalsignal_DMN_A24_CNO_').strip('.npy')]=np.load(path_data_DREADDs+filename)
+for filename in os.listdir(path_data_DREADDs):
+    if filename.startswith("Globalsignal_DMN_A30_CNO"):
+        GS['RSC'][filename.strip('Globalsignal_DMN_A30_CNO_').strip('.npy')]=np.load(path_data_DREADDs+filename)
+for filename in os.listdir(path_data_DREADDs):
+    if filename.startswith("Globalsignal_DMN_A29c_CNO"):
+        GS['RSC'][filename.strip('Globalsignal_DMN_A29c_CNO_').strip('.npy')]=np.load(path_data_DREADDs+filename)
+for filename in os.listdir(path_data_DREADDs):
+    if filename.startswith("Globalsignal_DMN_A30_control_CNO"):
+        GS['CTRL'][filename.strip('Globalsignal_DMN_A30_control_CNO_').strip('.npy')]=np.load(path_data_DREADDs+filename)
+        
+for filename in os.listdir(path_data_lesion):
+    if filename.startswith("Globalsignal"):
+        GS['Th'][my_removeprefix(filename,'Globalsignal_').strip('.npy')]=np.load(path_data_lesion+filename)
 
 GC_vox={'ACA':np.zeros((len(SUBS['ACA']),2,np.sum(msk))), 
     'RSC':np.zeros((len(SUBS['RSC']),2,np.sum(msk))),

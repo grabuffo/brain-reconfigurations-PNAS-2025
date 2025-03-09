@@ -64,10 +64,11 @@ mask=np.where(mask!=-1,1,0)
 msk=mask[::2,::2,::2]# coarse grained mask
 
 # mask Lesion data
-MASK_LESION=load_obj('MASK_LESION')  # Mask of single mice in Lesion Dataset
-MASK=np.asarray(list(MASK_LESION.values()))
-MASK=np.sum(MASK,axis=0)
-MASK=np.where(MASK==12,1,0)
+#MASK_LESION=load_obj('MASK_LESION')  # Mask of single mice in Lesion Dataset
+#MASK=np.asarray(list(MASK_LESION.values()))
+#MASK=np.sum(MASK,axis=0)
+#MASK=np.where(MASK==12,1,0)
+MASK=np.load(path_allen+'MASK.npy')
 
 # ROI to volume correspondence 
 VOL_rois={} # fine grained roi to volume dict
