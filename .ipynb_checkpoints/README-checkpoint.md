@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-# brain-reconfigurations-PNAS-2025
-
-=======
-
 # Mapping Global Brain Reconfigurations Following Local Targeted Manipulations
 
 This repository contains the code, data, and supplementary materials associated with the publication:
