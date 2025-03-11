@@ -9,7 +9,7 @@ Published in *Proceedings of the National Academy of Sciences (PNAS), 2025*.
 
 - `/scripts` — Analysis and simulation scripts.
 - `/data` — Contains partial datasets; additional data is hosted externally at [XXX].
-- `/figures` — Processed figures (optional).
+- `/figures` — Processed figures.
 - `/docs` — Supplementary documentation.
 - `LICENSE` — Licensing information (Creative Commons Attribution-NonCommercial 4.0).
 - `README.md` — This file, providing an overview of the repository.
