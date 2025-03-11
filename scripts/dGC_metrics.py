@@ -3,6 +3,7 @@ from scipy import stats
 
 ###########################################################
 # EXAMPLE: Given data with shape data.shape~(time, regions)
+data=np.random.rand(1000, 90)
 
 tlen=data.shape[0]
 nregions=data.shape[1]

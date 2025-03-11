@@ -14,8 +14,8 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 # PATHS
 path_allen='../data/AllenMouseConnectome/'
 path_fig='../figures/Figure1/'
-path_data_lesion='../data/Lesion/'
-path_data_DREADDs='../data/DREADDs/'
+path_data_lesion='../data/Empirical_data_features/dynamicGlobalConnectivity/Lesion/'
+path_data_DREADDs='../data/Empirical_data_features/dynamicGlobalConnectivity/DREADDs/'
 
 ##################
 # FUNCTIONS
@@ -35,6 +35,15 @@ def enlarger(fmri_image):
 def load_obj(name):
     with open(path_allen + name + '.pkl', 'rb') as f:
         return pickle.load(f)
+
+def fdr(p_vals):
+
+    from scipy.stats import rankdata
+    ranked_p_values = rankdata(p_vals)
+    fdr = p_vals * len(p_vals) / ranked_p_values
+    fdr[fdr > 1] = 1
+
+    return fdr
 
 #######################
 # COLORS
@@ -111,5 +120,38 @@ def plot_brain(vol_img, Template, Mask, title, cbar_label, vmin, vmax, cmap='jet
     cbar_ax.set_aspect(16)
     plt.tight_layout()
     plt.savefig(path_fig +title+'.pdf',dpi=400)
+
+
+#######################
+# Plot bars
+
+def bars(p, bottom, top):
+    # Get info about y-axis
+    yrange = top - bottom
+
+    # Columns corresponding to the datasets of interest
+    x1 = 1
+    x2 = 2
+    # What level is this bar among the bars above the plot?
+    level = 1
+    # Plot the bar
+    bar_height = (yrange * 0.08 * level)+ top/2
+    bar_tips = bar_height - (yrange * 0.02)
+    plt.plot(
+        [x1, x1, x2, x2],
+        [bar_tips, bar_height, bar_height, bar_tips], lw=1, c='k')
+    # Significance level
+
+    if p < 0.001:
+        sig_symbol = '*'
+    elif p < 0.01:
+        sig_symbol = '*'
+    elif p < 0.05:
+        sig_symbol = '*'
+    else:
+        sig_symbol = ''
+    text_height = bar_height + (yrange * 0.01)
+    plt.text((x1 + x2) * 0.5, text_height, sig_symbol, ha='center', c='k')
+    plt.ylim((-0.09,0.07))
 
 

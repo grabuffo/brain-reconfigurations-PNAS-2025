@@ -48,6 +48,8 @@ lenmods=[len(RSNs['DMN']),len(RSNs['Vis']),len(RSNs['LCN']),len(RSNs['BF']),len(
 
 order_mod=np.asarray(RSNs['DMN']+RSNs['Vis']+RSNs['LCN']+RSNs['BF']+RSNs['HPF']+RSNs['Th'])
 
+rex = np.ix_(order_mod,order_mod)
+
 def idt(d):
     return np.where(np.asarray(ROIs) == ROIsm[d])[0][0]
 

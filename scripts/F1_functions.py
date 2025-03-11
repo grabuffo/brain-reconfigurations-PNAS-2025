@@ -14,8 +14,8 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 # PATHS
 path_allen='../data/AllenMouseConnectome/'
 path_fig='../figures/Figure1/'
-path_data_lesion='../data/Lesion/'
-path_data_DREADDs='../data/DREADDs/'
+path_data_lesion='../data/Empirical_data_features/dynamicGlobalConnectivity/Lesion/'
+path_data_DREADDs='../data/Empirical_data_features/dynamicGlobalConnectivity/DREADDs/'
 
 ##################
 # FUNCTIONS
