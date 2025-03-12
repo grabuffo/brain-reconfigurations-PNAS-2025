@@ -1,0 +1,16 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "src"
+version = "0.1.0"
+description = "Mapping Global Brain Reconfigurations Following Local Targeted Manipulations"
+authors = ["Your Name <you@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+vbi = { url = "https://github.com/ins-amu/vbi/archive/refs/tags/v0.1.3.tar.gz" }
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.0"

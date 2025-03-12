@@ -14,6 +14,26 @@ Published in *Proceedings of the National Academy of Sciences (PNAS), 2025*.
 - `LICENSE` — Licensing information (Creative Commons Attribution-NonCommercial 4.0).
 - `README.md` — This file, providing an overview of the repository.
 
+## Installation
+
+```bash
+conda create --name env python=3.10 -y
+conda activate env
+
+git clone https://github.com/grabuffo/brain-reconfigurations-PNAS-2025.git
+cd brain-reconfigurations-PNAS-2025
+pip install -e .
+pip install --no-cache-dir cupy-cuda12x # for CUDA 12.x
+
+# or use docker of vbi 
+cd brain-reconfigurations-PNAS-2025
+dir=$(pwd)
+docker run --gpus all --rm -it -p 8888:8888 -v "$dir:/package" ghcr.io/ins-amu/vbi:main
+cd /package # open terminal inside container
+pip install --no-deps -e . 
+```
+
+
 ## Data Availability
 
 The processed data underlying this study (e.g., Empirical Functional Connectivities, simulated time series, etc.) are partially included in this repository. Larger files are available at [XXX].  
