@@ -22,15 +22,12 @@ conda activate env
 
 git clone https://github.com/grabuffo/brain-reconfigurations-PNAS-2025.git
 cd brain-reconfigurations-PNAS-2025
-pip install -e .
-pip install --no-cache-dir cupy-cuda12x # for CUDA 12.x
+pip install -r requirements.txt
 
 # or use docker of vbi 
 cd brain-reconfigurations-PNAS-2025
 dir=$(pwd)
 docker run --gpus all --rm -it -p 8888:8888 -v "$dir:/package" ghcr.io/ins-amu/vbi:main
-cd /package # open terminal inside container
-pip install --no-deps -e . 
 ```
 
 
