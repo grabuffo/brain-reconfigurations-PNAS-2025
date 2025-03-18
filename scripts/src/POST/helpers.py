@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import ptitprince as pt
+from copy import deepcopy
 from os.path import join
 import scipy.stats as stats
 from numpy import linalg as LA
@@ -265,6 +266,104 @@ def half_violinplot_pt(x, y, df, palette, ax, names=["pre", "post"]):
     ax.set_xlabel("")
 
 
+
+def plot_matrix(A, ax, title, **kwargs):
+    
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+    kwargs.setdefault("cmap", "jet")
+    kwargs.setdefault("aspect", "equal")
+
+    im = ax.imshow(A, **kwargs)
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im, cax=cax, ax=ax)
+    ax.set_title(title, fontsize=16)
+
+
+def get_fcd(bold, **kwargs):
+
+    olap = kwargs.get("olab", 0.94)
+    wwidth = kwargs.get("wwidth", 50)
+    maxNwindows = kwargs.get("maxNwindows", 200)
+    masks = kwargs.get("masks", {})
+    assert olap <= 1 and olap >= 0, "olap must be between 0 and 1"
+    nn, nt = bold.shape
+
+    if masks:
+        for key in masks.keys():
+            mask = masks[key]
+            assert mask.shape == (
+                nn,
+                nn,
+            ), "mask shape must be equal to the number of nodes"
+
+    fc_stream = []
+    Nwindows = min(((nt - wwidth * olap) // (wwidth * (1 - olap)), maxNwindows))
+    shift = int((nt - wwidth) // (Nwindows - 1))
+    if Nwindows == maxNwindows:
+        wwidth = int(shift // (1 - olap))
+
+    indx_start = range(0, (nt - wwidth + 1), shift)
+    indx_stop = range(wwidth, (1 + nt), shift)
+
+    for j1, j2 in zip(indx_start, indx_stop):
+        aux_s = bold[:, j1:j2]
+        corr_mat = np.corrcoef(aux_s)
+        fc_stream.append(corr_mat)
+
+    fc_stream = np.asarray(fc_stream)
+    mask_full = np.ones((nn, nn))
+    if not masks:
+        masks = {"full": mask_full}
+
+    FCDs = {}
+    for key in masks.keys():
+        mask = masks[key].astype(np.float64)
+        mask *= np.triu(mask_full, k=1)
+        nonzero_idx = np.nonzero(mask)
+        fc_stream_masked = fc_stream[:, nonzero_idx[0], nonzero_idx[1]]
+        fcd = np.corrcoef(fc_stream_masked, rowvar=True)
+        FCDs[key] = fcd
+    return FCDs
+
+
+def get_fc(ts, masks=None, positive=False, fc_fucntion="corrcoef"):
+
+    from numpy import corrcoef
+
+    n_noes = ts.shape[0]
+    if masks is None:
+        masks = {"full": np.ones((n_noes, n_noes))}
+
+    FCs = {}
+    FC = eval(fc_fucntion)(ts)
+    for _, key in enumerate(masks.keys()):
+        mask = masks[key]
+        fc = deepcopy(FC)
+        if positive:
+            fc = fc * (fc > 0)
+        fc = fc * mask
+        fc = fc - np.diag(np.diagonal(fc))
+        FCs[key] = fc
+
+    return FCs
+
+
+def set_k_diogonal(A, k, value=0.0):
+    """
+    set k diagonals of the given matrix to given value.
+    """
+
+    assert len(A.shape) == 2
+    n = A.shape[0]
+    assert k < n
+    for i in range(-k, k + 1):
+        a1 = np.diag(np.random.randint(1, 2, n - abs(i)), i)
+        idx = np.where(a1)
+        A[idx] = value
+    return A
+
+
 def get_fcd_edge(bold):
     """!
     Compute the FCD from the BOLD time series.
@@ -277,7 +376,7 @@ def get_fcd_edge(bold):
     """
 
     cf = compute_cofluctuation(bold.T)  # (time, node_pairs)
-    return np.var(np.corrcoef(cf))              # (time, time)
+    return np.var(np.corrcoef(cf))  # (time, time)
 
 
 def compute_cofluctuation(ts):
@@ -302,83 +401,32 @@ def compute_cofluctuation(ts):
     return cf
 
 
-def get_fcd(bold, **kwargs):
-    """!
-    Functional Connectivity Dynamics from a collection of time series
+def make_mask(n, indices):
+    """
+    make a mask matrix with given indices
 
     Parameters
     ----------
-    data: np.ndarray (2d)
-        time series in rows [n_nodes, n_samples]
-    kwargs: dict
-        parameters including:
-        olap: float
-            overlap between windows
-        wwidth: int
-            window width
-        maxNwindows: int
-            maximum number of windows
+    n : int
+        size of the mask matrix
+    indices : list
+        indices of the mask matrix
 
     Returns
     -------
-    FCD: np.ndarray (2d)
-        functional connectivity dynamics matrix
-
+    mask : numpy.ndarray
+        mask matrix
     """
+    # check validity of indices
+    if not isinstance(indices, (list, tuple, np.ndarray)):
+        raise ValueError("indices must be a list, tuple, or numpy array.")
+    if not all(isinstance(i, (int, np.int64, np.int32, np.int16)) for i in indices):
+        raise ValueError("indices must be a list of integers.")
+    if not all(i < n for i in indices):
+        raise ValueError("indices must be smaller than n.")
 
-    olap = kwargs.get("olab", 0.94)
-    wwidth = kwargs.get("wwidth", 30)
-    maxNwindows = kwargs.get("maxNwindows", 200)
-    masks = kwargs.get("masks", {})
-    assert olap <= 1 and olap >= 0, "olap must be between 0 and 1"
-    nn, nt = bold.shape
-    
-    if masks:
-        for key in masks.keys():
-            mask = masks[key]
-            assert mask.shape == (nn, nn), "mask shape must be equal to the number of nodes"
-    
-    fc_stream = []
-    Nwindows = min(((nt - wwidth * olap) // (wwidth * (1 - olap)), maxNwindows))
-    shift = int((nt - wwidth) // (Nwindows - 1))
-    if Nwindows == maxNwindows:
-        wwidth = int(shift // (1 - olap))
+    mask = np.zeros((n, n), dtype=np.int64)
+    mask[np.ix_(indices, indices)] = 1
+    mask = mask - np.diag(np.diag(mask))
 
-    indx_start = range(0, (nt - wwidth + 1), shift)
-    indx_stop = range(wwidth, (1 + nt), shift)
-
-    for j1, j2 in zip(indx_start, indx_stop):
-        aux_s = bold[:, j1:j2]
-        corr_mat = np.corrcoef(aux_s)
-        fc_stream.append(corr_mat)
-        
-    fc_stream = np.asarray(fc_stream)
-    mask_full = np.ones((nn, nn))
-    if not masks:
-        masks = {"full": mask_full}
-
-    FCDs = {}
-    for key in masks.keys():
-        mask = masks[key]
-        mask *= np.triu(mask_full, k=1)
-        nonzero_idx = np.nonzero(mask)
-        fc_stream_masked = fc_stream[:, nonzero_idx[0], nonzero_idx[1]]
-        fcd = np.corrcoef(fc_stream_masked, rowvar=True)
-        FCDs[key] = fcd
-    return FCDs
-
-
-
-def plot_matrix(A, ax, title, **kwargs):
-    
-    from mpl_toolkits.axes_grid1 import make_axes_locatable
-    kwargs.setdefault("cmap", "jet")
-    kwargs.setdefault("aspect", "equal")
-
-    im = ax.imshow(A, **kwargs)
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="5%", pad=0.05)
-    plt.colorbar(im, cax=cax, ax=ax)
-    ax.set_title(title, fontsize=16)
-
-
+    return mask
