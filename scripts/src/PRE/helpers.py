@@ -6,6 +6,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from os.path import join
+from copy import deepcopy
 import scipy.stats as stats
 from numpy import linalg as LA
 from scipy.stats import zscore
@@ -13,7 +14,7 @@ from typing import Union, List
 import matplotlib.pyplot as plt
 from collections import OrderedDict
 from sklearn.decomposition import PCA
-from vbi.models.cupy.mpr_modified_bold import MPR_sde
+from vbi.models.cupy.mpr import MPR_sde
 from vbi import get_features_by_domain, get_features_by_given_names, report_cfg, update_cfg
 from vbi import extract_features, extract_features_df
 
@@ -260,7 +261,7 @@ def get_fcd(bold, **kwargs):
     """
 
     olap = kwargs.get("olab", 0.94)
-    wwidth = kwargs.get("wwidth", 30)
+    wwidth = kwargs.get("wwidth", 50)
     maxNwindows = kwargs.get("maxNwindows", 200)
     masks = kwargs.get("masks", {})
     assert olap <= 1 and olap >= 0, "olap must be between 0 and 1"
@@ -292,7 +293,7 @@ def get_fcd(bold, **kwargs):
 
     FCDs = {}
     for key in masks.keys():
-        mask = masks[key]
+        mask = masks[key].astype(np.float64)
         mask *= np.triu(mask_full, k=1)
         nonzero_idx = np.nonzero(mask)
         fc_stream_masked = fc_stream[:, nonzero_idx[0], nonzero_idx[1]]
@@ -302,4 +303,107 @@ def get_fcd(bold, **kwargs):
 
 
 
+def get_fc(ts, masks=None, positive=False, fc_fucntion="corrcoef"):
+
+    from numpy import corrcoef
+
+    n_noes = ts.shape[0]
+    if masks is None:
+        masks = {"full": np.ones((n_noes, n_noes))}
+
+    FCs = {}
+    FC = eval(fc_fucntion)(ts)
+    for _, key in enumerate(masks.keys()):
+        mask = masks[key]
+        fc = deepcopy(FC)
+        if positive:
+            fc = fc * (fc > 0)
+        fc = fc * mask
+        fc = fc - np.diag(np.diagonal(fc))
+        FCs[key] = fc
+
+    return FCs
+
+
+def set_k_diogonal(A, k, value=0.0):
+    """
+    set k diagonals of the given matrix to given value.
+    """
+
+    assert len(A.shape) == 2
+    n = A.shape[0]
+    assert k < n
+    for i in range(-k, k + 1):
+        a1 = np.diag(np.random.randint(1, 2, n - abs(i)), i)
+        idx = np.where(a1)
+        A[idx] = value
+    return A
+
+
+def get_fcd_edge(bold):
+    """!
+    Compute the FCD from the BOLD time series.
+
+    \param bold : array_like
+        BOLD time series of shape (nnodes, ntime)
+
+    \return array_like
+            matrix of edge functional connectivity dynamics of shape (time, time)
+    """
+
+    cf = compute_cofluctuation(bold.T)  # (time, node_pairs)
+    return np.var(np.corrcoef(cf))  # (time, time)
+
+
+def compute_cofluctuation(ts):
+    """!
+    Compute co-fluctuation (functional connectivity edge) time series for
+    each pair of nodes by element-wise multiplication of z-scored node time
+    series.
+
+
+    @param ts : array_like
+        Time series of shape (time, nodes).ts
+
+    \return array_like
+        Co-fluctuation (edge time series) of shape (time, node_pairs).
+    """
+    nt, nn = ts.shape
+    ts = stats.zscore(ts, axis=0)
+
+    pairs = np.triu_indices(nn, 1)
+    cf = ts[:, pairs[0]] * ts[:, pairs[1]]
+
+    return cf
+
+
+def make_mask(n, indices):
+    """
+    make a mask matrix with given indices
+
+    Parameters
+    ----------
+    n : int
+        size of the mask matrix
+    indices : list
+        indices of the mask matrix
+
+    Returns
+    -------
+    mask : numpy.ndarray
+        mask matrix
+    """
+    # check validity of indices
+    if not isinstance(indices, (list, tuple, np.ndarray)):
+        raise ValueError("indices must be a list, tuple, or numpy array.")
+    if not all(isinstance(i, (int, np.int64, np.int32, np.int16)) for i in indices):
+        raise ValueError("indices must be a list of integers.")
+    if not all(i < n for i in indices):
+        raise ValueError("indices must be smaller than n.")
+
+    mask = np.zeros((n, n), dtype=np.int64)
+    mask[np.ix_(indices, indices)] = 1
+    mask = mask - np.diag(np.diag(mask))
+
+    return mask
 
