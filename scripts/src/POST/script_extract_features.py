@@ -4,8 +4,8 @@ from vbi import get_features_by_domain, get_features_by_given_names, report_cfg,
 from vbi import extract_features, extract_features_df
 
 
-# path = "output/1"
-path="/p/project/paj2415/output/1"
+path = "output"
+# path="/p/project/paj2415/output/1"
 n_workers = 10
 os.makedirs(path+"/figs", exist_ok=True)
 

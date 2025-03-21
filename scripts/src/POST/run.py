@@ -10,8 +10,8 @@ chunk_size = 4096
 dtype = "float"
 # engine = "cpu"
 engine = "gpu"
-path = "output/"
-os.makedirs(path, exist_ok=True)
+data_path = "../../../data/SBI/POST/"
+os.makedirs("output", exist_ok=True)
 
 DS = G_Dataset(data_path="../../../data/")
 weights = DS.get_SC()
@@ -24,7 +24,7 @@ idx_regions = list(idx_regions_dict.values())
 theta_eta = -4.6 * np.ones(nn).astype(dtype)
 
 # load optimal G and 6-eta for each subject from PRE:
-df = pd.read_csv("output/peaks_ks_opt.csv")
+df = pd.read_csv(data_path+"peaks_ks_opt.csv")
 target_roi = {
     "RSC": DS.regions_RSC, 
     "ACA": DS.regions_ACA, 
@@ -97,12 +97,12 @@ par = {
     "RECORD_RV": False,
     "RECORD_BOLD": True,
     "same_initial_state": True,
-    "output": path,
+    "output": "output",
 }
 
 
 # store par in pickle file
-with open(path+"/par.pkl", "wb") as f:
+with open("output/par.pkl", "wb") as f:
     pickle.dump(par, f)
 
 G_chunks = np.array_split(Gs, ns//chunk_size)
@@ -110,14 +110,14 @@ eta_chunks = np.array_split(etas, ns//chunk_size, axis=1)
 eta1_chunks = np.array_split(theta_eta, ns//chunk_size)
 num_chunks = ns//chunk_size
 
-with open(path+"/priors.pkl", "wb") as f:
+with open("output/priors.pkl", "wb") as f:
     pickle.dump({"G": G_chunks, "eta": eta_chunks, "eta1": eta1_chunks}, f)
 
 
 for i in range(num_chunks):
     # run local:
     print(f"Running chunk {i+1} / {num_chunks}")
-    os.system(f"python one_batch.py {i} {path}")
+    os.system(f"python one_batch.py {i} {"output"}")
     
     # run on cluster:
     # job_file = write_bash_script(i, path)
